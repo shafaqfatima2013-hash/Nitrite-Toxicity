@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Nitrite Harms Fish: Simulation</title>
+<style>
+:root{--navy:#0b2a43;--grey:#eeeeee}
+*{box-sizing:border-box}
+html,body{margin:0}
+body,button,input{font-family:Arial,Helvetica,sans-serif}
+body{background:#fff;color:#000;padding:14px;font-size:1rem;line-height:1.5}
+h1{font-size:1.5rem;margin:0 0 4px;line-height:1.3}
+h2{font-size:1.125rem;margin:0 0 6px;line-height:1.3}
+h2:focus{outline:3px solid #000;outline-offset:2px}
+.sub,.note,#fb,li,label,.rd{font-size:1rem;color:#000}
+.sub{margin:0 0 12px}
+.wrap{display:grid;grid-template-columns:minmax(300px,2.3fr) minmax(260px,1fr);gap:14px;max-width:1500px;margin:auto}
+@media(max-width:900px){.wrap{grid-template-columns:1fr}}
+.card{background:#fff;border:2px solid var(--navy);border-radius:10px;padding:12px}
+.scene{border:1px solid var(--navy);border-radius:8px;overflow:hidden;background:#fff}
+.scene svg{width:100%;height:auto;display:block}
+ul.leg{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+@media(max-width:520px){ul.leg{grid-template-columns:1fr}}
+.dot{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid #000;vertical-align:-2px;margin-right:6px}
+.cell{border-radius:50%/60%;width:22px}
+ol.steps{list-style:none;margin:0 0 12px;padding:0}
+ol.steps li{border-left:6px solid #c5c5c5;margin-bottom:4px}
+.stp{display:block;width:100%;text-align:left;background:transparent;color:#000;border:0;border-radius:0;font-weight:400;padding:10px}
+.stp:hover:not([aria-disabled="true"]){background:var(--grey)!important;color:#000!important}
+.stp[aria-disabled="true"]{opacity:1;cursor:default}
+ol.steps li.active .stp{font-weight:700}
+ol.steps li.active{border-color:#000;background:var(--grey);font-weight:700}
+ol.steps li.done{border-color:var(--navy)}
+ol.steps li.done .stp::after{content:" \2713";font-weight:700}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#msg{min-height:7em;font-size:1.125rem;line-height:1.45;margin:0 0 10px}
+button{font-size:1rem;font-weight:700;cursor:pointer;border-radius:8px;border:2px solid var(--navy);background:var(--navy);color:#fff;padding:10px 14px}
+button:hover:not([aria-disabled="true"]){background:#000;border-color:#000}
+[aria-disabled="true"]{opacity:.7;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid #000;outline-offset:2px;box-shadow:0 0 0 2px #fff}
+#act{width:100%}
+.sec{background:#fff;color:#000;border-color:#000;margin-top:8px}
+.sec:hover:not([aria-disabled="true"]){background:var(--grey)!important;color:#000!important}
+.ctl{margin:10px 0}
+.ctl input{width:100%;height:32px;accent-color:#0b2a43}
+.rd{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin:8px 0}
+.rd b{text-align:right}
+.bar{grid-column:1/3;height:14px;border:2px solid #000;border-radius:7px;background:#fff;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--navy)}
+#quiz{display:none;margin-top:10px}
+.opt{display:block;width:100%;text-align:left;background:#fff;color:#000;border:2px solid var(--navy);margin-bottom:6px;font-weight:400}
+.opt:hover:not([aria-disabled="true"]){background:var(--grey);color:#000;border-color:#000}
+.opt[aria-disabled="true"]{opacity:1;cursor:default}
+.opt.ok{background:var(--grey);border:4px solid #000}
+.opt.no{border:3px dashed #000}
+#fb{margin-top:6px}
+.tail{transform-box:fill-box;transform-origin:0 50%;animation:wag 1s ease-in-out infinite alternate}
+.gill{transform-box:fill-box;transform-origin:0 50%;animation:flap var(--rate,1.2s) ease-in-out infinite}
+.pec{transform-box:fill-box;transform-origin:0 0;animation:flut .7s ease-in-out infinite alternate}
+@keyframes flut{from{transform:rotate(-10deg)}to{transform:rotate(14deg)}}
+.mouth{transform-box:fill-box;transform-origin:100% 50%;animation:gape var(--rate,1.2s) ease-in-out infinite}
+@keyframes wag{from{transform:rotate(-9deg)}to{transform:rotate(9deg)}}
+@keyframes flap{50%{transform:scaleX(1.3)}}
+@keyframes gape{50%{transform:scaleY(2.2)}}
+.bub{animation:rise 5s linear infinite}
+@keyframes rise{from{transform:translateY(0);opacity:.9}to{transform:translateY(-230px);opacity:0}}
+.pel{animation:sink 12s linear infinite}
+@keyframes sink{from{transform:translateY(0)}to{transform:translateY(190px)}}
+.rip{transform-box:fill-box;transform-origin:center;animation:rip 1.2s ease-out infinite}
+@keyframes rip{from{transform:scale(.4);opacity:1}to{transform:scale(1.5);opacity:0}}
+body.paused *{animation-play-state:paused!important}
+@media(prefers-reduced-motion:reduce){.tail,.pec,.bub,.pel{animation:none}}
+</style>
+</head>
+<body>
+<h1 class="sr">How nitrite harms fish: a three-stage simulation</h1>
+<div class="wrap">
+<div class="card">
+<div class="scene">
+<svg id="svg" viewBox="0 0 600 400" role="img" aria-label="">
+<defs>
+<linearGradient id="fb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#46552f"/><stop offset=".3" stop-color="#7f9158"/><stop offset=".62" stop-color="#c8c79a"/><stop offset="1" stop-color="#f1e9d3"/></linearGradient>
+<linearGradient id="fh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".0"/><stop offset=".3" stop-color="#fff" stop-opacity=".38"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<linearGradient id="fn" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c2562b" stop-opacity=".95"/><stop offset="1" stop-color="#e8a05a" stop-opacity=".55"/></linearGradient>
+<radialGradient id="ey" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#f3d77a"/><stop offset="1" stop-color="#a8761c"/></radialGradient>
+<pattern id="sc" width="9" height="7" patternUnits="userSpaceOnUse"><path d="M0 7C2 3 7 3 9 7" fill="none" stroke="#000" stroke-opacity=".16" stroke-width="1"/></pattern>
+</defs>
+<rect width="600" height="400" fill="#e6f4f9"/>
+<g id="s1">
+<line x1="108" y1="172" x2="330" y2="40" stroke="#000" stroke-width="2" stroke-dasharray="6 5"/>
+<line x1="108" y1="228" x2="330" y2="360" stroke="#000" stroke-width="2" stroke-dasharray="6 5"/>
+<g id="f1" transform="translate(150,200) scale(1.25)"></g>
+<g id="p1"></g>
+<rect x="330" y="40" width="250" height="320" rx="14" fill="#fff" stroke="#000" stroke-width="3"/>
+<rect x="333" y="43" width="244" height="107" fill="#dff0f7"/>
+<g id="epi"></g>
+<rect x="333" y="204" width="244" height="153" fill="#f9d9d9"/>
+<g id="irbc"></g>
+<g id="pi"></g>
+</g>
+<g id="s2" display="none">
+<rect x="20" y="95" width="560" height="220" rx="60" fill="#f9d9d9" stroke="#000" stroke-width="4"/>
+<g id="cells"></g><g id="n2"></g><g id="o2"></g>
+</g>
+<g id="s3" display="none">
+<rect x="20" y="62" width="560" height="320" fill="#d7edf6" stroke="#000" stroke-width="3"/>
+<line x1="20" y1="62" x2="580" y2="62" stroke="#000" stroke-width="3"/>
+<g id="bubs"></g>
+<g id="pels"></g>
+<g id="rips" display="none"><ellipse cx="150" cy="62" rx="36" ry="6" fill="none" stroke="#000" stroke-width="2" class="rip"/><ellipse cx="150" cy="62" rx="36" ry="6" fill="none" stroke="#000" stroke-width="2" class="rip" style="animation-delay:.6s"/></g>
+<g id="f3" transform="translate(300,270)"></g>
+<circle id="call" cx="515" cy="130" r="44" fill="#d94a4a" stroke="#000" stroke-width="4"/>
+</g>
+</svg>
+</div>
+<ul class="leg" aria-label="Key">
+<li><span class="dot" style="background:#e07b00"></span>Nitrite (NO&#8322;&#8315;), orange circle</li>
+<li><span class="dot" style="background:#1e6fd9"></span>Oxygen (O&#8322;), blue circle</li>
+<li><span class="dot cell" style="background:#d62828"></span>Healthy red blood cell</li>
+<li><span class="dot cell" style="background:#4a2511"></span>Cell with methaemoglobin (dark brown)</li>
+</ul>
+</div>
+<div class="card">
+<ol class="steps" id="steps" aria-label="Simulation stages: choose a stage to start it">
+<li><button type="button" class="stp" data-n="1" aria-disabled="false">Stage 1: Gill entry<span class="sr"></span></button></li>
+<li><button type="button" class="stp" data-n="2" aria-disabled="false">Stage 2: Inside the blood<span class="sr"></span></button></li>
+<li><button type="button" class="stp" data-n="3" aria-disabled="false">Stage 3: Brown blood and symptoms<span class="sr"></span></button></li>
+</ol>
+<div class="ctl"><label for="ppm">Nitrite in the tank water: <b id="pv">3.0 ppm</b></label>
+<input id="ppm" type="range" min="0.5" max="5" step="0.5" value="3"></div>
+<p id="msg" aria-live="polite"></p>
+<button id="act" type="button"></button>
+<button id="pause" class="sec" type="button" aria-pressed="false">Pause animation</button>
+</div>
+</div>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},NS="http://www.w3.org/2000/svg";
+var RED=[214,40,40],BRN=[74,37,17],GR=[217,74,74],GB=[90,45,18];
+function mk(tag,at,par){var e=document.createElementNS(NS,tag);for(var k in at)e.setAttribute(k,at[k]);if(par)par.appendChild(e);return e}
+function rgb(a){return "rgb("+a.map(Math.round).join(",")+")"}
+function mix(a,b,t){return a.map(function(v,i){return v+(b[i]-v)*t})}
+function ease(t){t=Math.max(0,Math.min(1,t));return t*t*(3-2*t)}
+function rnd(a,b){return a+Math.random()*(b-a)}
+var FISH='<path class="tail" d="M84 0C100 -10 112 -34 132 -46C124 -18 124 18 132 46C112 34 100 10 84 0Z" fill="url(#fn)" stroke="#6b3216" stroke-width="1.5"/><path class="tail" d="M96 -4L126 -30M98 0L128 0M96 4L126 30" stroke="#000" stroke-opacity=".28" stroke-width="1" fill="none"/><path d="M-20 -42C-10 -56 4 -60 20 -57C38 -52 52 -40 64 -26L42 -34L20 -40L0 -44Z" fill="url(#fn)" stroke="#6b3216" stroke-width="1.5"/><path d="M0 -44L6 -57M14 -41L22 -56M28 -38L40 -50M40 -34L54 -42" stroke="#000" stroke-opacity=".28" stroke-width="1" fill="none"/><path d="M20 40C30 52 50 52 62 30L44 35Z" fill="url(#fn)" stroke="#6b3216" stroke-width="1.5"/><path d="M-92 2C-88 -14 -70 -34 -30 -42C10 -50 60 -34 90 -10L90 12C60 38 10 48 -30 42C-70 34 -90 18 -92 2Z" fill="url(#fb)" stroke="#2f3a20" stroke-width="2"/><path d="M-92 2C-88 -14 -70 -34 -30 -42C10 -50 60 -34 90 -10L90 12C60 38 10 48 -30 42C-70 34 -90 18 -92 2Z" fill="url(#sc)"/><path d="M-92 2C-88 -14 -70 -34 -30 -42C10 -50 60 -34 90 -10L90 12C60 38 10 48 -30 42C-70 34 -90 18 -92 2Z" fill="url(#fh)"/><path d="M-42 -6C0 -12 50 -8 84 0" fill="none" stroke="#000" stroke-opacity=".3" stroke-width="1.5" stroke-dasharray="3 3"/><path class="gill" d="M-50 -30C-26 -20 -26 20 -50 30C-40 14 -40 -14 -50 -30Z" style="fill:var(--gill)" stroke="#3a0d0d" stroke-width="1.5"/><path d="M-52 -34C-24 -24 -24 24 -52 34" fill="none" stroke="#1d2614" stroke-opacity=".7" stroke-width="3"/><path class="pec" d="M-34 12C-18 30 4 36 20 32C4 24 -12 16 -34 12Z" fill="url(#fn)" stroke="#6b3216" stroke-width="1.2"/><circle cx="-72" cy="-10" r="8.5" fill="url(#ey)" stroke="#1d1d1d" stroke-width="1.5"/><circle cx="-72" cy="-10" r="4.4"/><circle cx="-74" cy="-12.5" r="1.7" fill="#fff"/><path class="mouth" d="M-92 2L-79 -1L-79 8Z" fill="#5a1a1a" stroke="#1d1d1d" stroke-width="1.2"/>';
+var f1=$("f1"),f3=$("f3"),msg=$("msg"),act=$("act");
+f1.innerHTML=FISH;f3.innerHTML=FISH;
+function gillCol(g,t){g.style.setProperty("--gill",rgb(mix(GR,GB,t)))}
+function fishRate(g,r){g.style.setProperty("--rate",r+"s")}
+var ppm=3,running=false,paused=false,stageNum=0,raf=0,last=0,S={},doneF=[false,false,false];
+var NAMES=["Gill entry","Inside the blood","Brown blood and symptoms"];
+var LI=document.querySelectorAll("#steps li");
+var SCEN=["Close view of a fish head with nitrite particles flowing to the gills, and a magnified gill cross-section.","Blood vessel with red blood cells; nitrite particles entering the cells and turning them brown.","Fish near the water surface with brown gills, gasping, in water full of oxygen bubbles."];
+function F(){return Math.min(.9,ppm*.25)}
+function setMsg(t){msg.textContent=t}
+function setLabel(t,d){act.textContent=t;act.setAttribute("aria-disabled",d?"true":"false")}
+function refresh(){
+ LI.forEach(function(li,k){var b=li.querySelector(".stp"),on=running&&stageNum-1===k;
+  li.className=(doneF[k]?"done":"")+(on?" active":"");
+  if(on)b.setAttribute("aria-current","step");else b.removeAttribute("aria-current");
+  b.setAttribute("aria-disabled",running?"true":"false");
+  b.querySelector(".sr").textContent=doneF[k]?" (completed)":""});
+ if(running)setLabel("Stage "+stageNum+" running\u2026",true);
+ else{var nx=doneF.indexOf(false);if(nx<0)setLabel("Restart simulation",false);else setLabel("Start Stage "+(nx+1)+": "+NAMES[nx],false)}
+ $("ppm").disabled=running}
+function scene(n){["s1","s2","s3"].forEach(function(id,i){$(id).setAttribute("display",i===n-1?"inline":"none")});$("svg").setAttribute("aria-label",SCEN[n-1])}
+var epi=$("epi"),i;for(i=0;i<5;i++){mk("rect",{x:335+i*48.5,y:152,width:46,height:48,rx:10,fill:"#f6c7a8",stroke:"#7a4a2a","stroke-width":2},epi);mk("circle",{cx:358+i*48.5,cy:176,r:8,fill:"#8a5a7a"},epi)}
+var irbc=[];for(i=0;i<3;i++){var e=mk("ellipse",{rx:20,ry:12,cy:285,fill:rgb(RED),stroke:"#000","stroke-width":2},$("irbc"));irbc.push({e:e,x:350+i*85})}
+var bubs=$("bubs");for(i=0;i<14;i++){mk("circle",{cx:rnd(40,560),cy:rnd(250,370),r:rnd(3,6),fill:"#1e6fd9",stroke:"#fff","stroke-width":1.5,class:"bub",style:"animation-delay:-"+rnd(0,5)+"s"},bubs)}
+var pels=$("pels");for(i=0;i<5;i++){mk("circle",{cx:rnd(330,470),cy:rnd(66,80),r:5,fill:"#7a4a1a",stroke:"#000","stroke-width":1.5,class:"pel",style:"animation-delay:-"+rnd(0,12)+"s"},pels)}
+pels.setAttribute("display","none");
+/* STAGE 1 (5 s) */
+var W1=[],I1=[];
+function startS1(){S={t:0,next:0,sp:0,N:4+Math.round(ppm*3),said:false};W1=[];I1=[];$("p1").innerHTML="";$("pi").innerHTML="";scene(1);gillCol(f1,0);
+ setMsg("Stage 1: water flows over the gills. Nitrite (NO\u2082\u207b) in the water is taken up by the gill epithelium, using the pathway the fish normally uses to absorb chloride.")}
+function s1(dt){
+ S.t+=dt;var i,p,q,d;
+ if(S.sp<S.N&&S.t>=S.next){var c=mk("circle",{r:7,fill:"#e07b00",stroke:"#000","stroke-width":1.5},$("p1"));W1.push({e:c,x:rnd(20,60),y:rnd(150,250),ph:rnd(0,6)});S.sp++;S.next=S.t+1.8/S.N}
+ for(i=W1.length-1;i>=0;i--){p=W1[i];var dx=108-p.x,dy=200-p.y;d=Math.hypot(dx,dy);
+  if(d<14){p.e.remove();W1.splice(i,1);var e=mk("circle",{r:7,fill:"#e07b00",stroke:"#000","stroke-width":1.5},$("pi"));I1.push({e:e,x:rnd(350,560),y:55,ph:rnd(0,6),lim:rnd(500,565)});
+   if(!S.said){S.said=true;setMsg("Nitrite crosses the thin gill epithelium (middle layer) and enters the blood plasma below it.")}continue}
+  p.ph+=dt*6;p.x+=dx/d*130*dt;p.y+=dy/d*130*dt+Math.sin(p.ph)*18*dt;p.e.setAttribute("cx",p.x);p.e.setAttribute("cy",p.y)}
+ for(i=0;i<I1.length;i++){q=I1[i];q.ph+=dt*4;
+  if(q.y<150){q.y+=100*dt;q.x+=Math.sin(q.ph)*12*dt}else if(q.y<202){q.y+=60*dt}else{q.y=Math.min(q.y+25*dt,330);q.x=Math.min(q.x+60*dt,q.lim)}
+  q.e.setAttribute("cx",q.x);q.e.setAttribute("cy",q.y)}
+ if(S.t>=5)finish("Stage 1 complete: nitrite is now in the blood plasma. Next it enters the red blood cells.")}
+/* STAGE 2 (5 s) */
+var cells=[];
+function startS2(){S={t:0,nx:0,ox:0,nxl:[],ol:[],said:false};cells=[];$("cells").innerHTML="";$("n2").innerHTML="";$("o2").innerHTML="";scene(2);
+ var pos=[[95,190],[205,225],[315,185],[425,225],[525,190]],k=[1,.85,1.1,.9,1.05];
+ pos.forEach(function(p,i){var g=mk("g",{},$("cells")),el=mk("ellipse",{rx:40,ry:27,fill:rgb(RED),stroke:"#000","stroke-width":3},g);mk("ellipse",{rx:17,ry:10,fill:"#000","fill-opacity":.15},g);
+  cells.push({g:g,el:el,bx:p[0],by:p[1],x:p[0],y:p[1],k:k[i],f:0,n:0,ph:rnd(0,6)})});
+ setMsg("Stage 2: nitrite enters red blood cells and oxidises the iron in haemoglobin (Fe\u00b2\u207a to Fe\u00b3\u207a). Oxyhaemoglobin becomes methaemoglobin, which cannot bind oxygen.")}
+function s2(dt){
+ S.t+=dt;var i,p,Fc=F()*ease(S.t/4);
+ cells.forEach(function(c){c.x=c.bx+12*Math.sin(S.t*1.6+c.ph);c.y=c.by+6*Math.cos(S.t*1.3+c.ph);c.f=Math.min(1,Fc*c.k*1.15);c.el.setAttribute("fill",rgb(mix(RED,BRN,c.f)));c.g.setAttribute("transform","translate("+c.x+","+c.y+")")});
+ if(S.t<3.5&&S.t>=S.nx){var cc=cells[Math.floor(rnd(0,5))],m=mk("circle",{r:7,fill:"#e07b00",stroke:"#000","stroke-width":1.5},$("n2"));S.nxl.push({e:m,x:cc.x+rnd(-25,25),y:112,c:cc});S.nx=S.t+Math.max(.12,.4/(ppm/3))}
+ for(i=S.nxl.length-1;i>=0;i--){p=S.nxl[i];var dx=p.c.x-p.x,dy=p.c.y-p.y,d=Math.hypot(dx,dy);if(d<18){p.e.remove();S.nxl.splice(i,1);continue}p.x+=dx/d*170*dt;p.y+=dy/d*170*dt;p.e.setAttribute("cx",p.x);p.e.setAttribute("cy",p.y)}
+ if(S.t<4&&S.t>=S.ox){var tc=cells[Math.floor(rnd(0,5))],o=mk("circle",{r:6,fill:"#1e6fd9",stroke:"#000","stroke-width":1.5},$("o2"));S.ol.push({e:o,x:30,y:rnd(130,280),c:tc,rev:false,a:1});S.ox=S.t+.4}
+ for(i=S.ol.length-1;i>=0;i--){p=S.ol[i];
+  if(p.rev){p.x-=120*dt;p.y+=rnd(-40,40)*dt;p.a-=dt*1.5;p.e.setAttribute("opacity",Math.max(0,p.a));if(p.a<=0){p.e.remove();S.ol.splice(i,1);continue}}
+  else{var tx=p.c.x-52,ty=p.c.y,ddx=tx-p.x,ddy=ty-p.y,dd=Math.hypot(ddx,ddy);
+   if(dd<8){if(p.c.f<.5&&p.c.n<3){var ang=[[-36,-8],[-32,10],[-18,-22]][p.c.n++];p.e.remove();mk("circle",{cx:ang[0],cy:ang[1],r:6,fill:"#1e6fd9",stroke:"#fff","stroke-width":2},p.c.g);S.ol.splice(i,1);continue}else{p.rev=true}}
+   else{p.x+=ddx/dd*170*dt;p.y+=ddy/dd*170*dt}}
+  p.e.setAttribute("cx",p.x);p.e.setAttribute("cy",p.y)}
+ if(!S.said&&Fc>.3){S.said=true;setMsg("The cells are turning dark brown. Oxygen molecules now bounce off them instead of binding.")}
+ if(S.t>=5)finish("Stage 2 complete: "+Math.round(F()*100)+"% of the haemoglobin is now methaemoglobin. The water still has plenty of oxygen, but the blood cannot carry it. This is called functional anaemia.")}
+/* STAGE 3 (5 s) */
+function startS3(){S={t:0,m:0};scene(3);$("pels").setAttribute("display","none");$("rips").setAttribute("display","none");
+ gillCol(f3,0);fishRate(f3,1.2);f3.setAttribute("transform","translate(300,270)");$("call").setAttribute("fill",rgb(GR));
+ setMsg("Stage 3: as methaemoglobin builds up, the blood and gills turn chocolate-brown. The large circle shows the gill colour.")}
+function s3(dt){
+ S.t+=dt;var Fv=F(),t=S.t,cv=Math.min(1,Fv*ease(t/1.2)*1.1),r=1.2,y=270,rot=0,x=300;
+ gillCol(f3,cv);$("call").setAttribute("fill",rgb(mix(GR,GB,cv)));
+ if(t>=1){var u=ease((t-1)/1.5);y=270-158*u;rot=14*u;x=300-70*u}
+ if(t>=1&&S.m<1){S.m=1;setMsg("Starved of oxygen, the fish rises toward the surface.")}
+ if(t>=2.5){var q=ease((t-2.5)/1.2);r=Math.max(.35,1.2-1.1*Fv*q);fishRate(f3,r.toFixed(2));$("rips").setAttribute("display","inline");if(S.m<2){S.m=2;setMsg("Severe respiratory distress: the fish gasps at the surface with rapid gill movements, even though the water is full of oxygen.")}}
+ if(t>=3.8&&S.m<3){S.m=3;$("pels").setAttribute("display","inline");setMsg("Lethargy and loss of appetite: the fish barely moves and ignores the food floating beside it.")}
+ f3.setAttribute("transform","translate("+x+","+y+") rotate("+rot+")");
+ if(t>=5)finish("Stage 3 complete: methaemoglobin has turned the blood and gills brown, and the fish is in severe respiratory distress even though the water holds plenty of oxygen.")}
+/* flow */
+function finish(text){running=false;doneF[stageNum-1]=true;setMsg(text);refresh()}
+function startStage(n){if(running)return;stageNum=n;running=true;refresh();if(n===1)startS1();else if(n===2)startS2();else startS3()}
+function tick(n){raf=requestAnimationFrame(tick);var dt=Math.min(.05,(n-last)/1000);last=n;if(paused)return;
+ if(running){if(stageNum===1)s1(dt);else if(stageNum===2)s2(dt);else s3(dt)}
+ if(stageNum<=1){irbc.forEach(function(r){r.x+=25*dt;if(r.x>565)r.x=345;r.e.setAttribute("cx",r.x)})}}
+function reset(focusIt){running=false;stageNum=0;S={};W1=[];I1=[];cells=[];doneF=[false,false,false];
+ ["p1","pi","cells","n2","o2"].forEach(function(id){$(id).innerHTML=""});
+ scene(1);gillCol(f1,0);gillCol(f3,0);fishRate(f1,1.2);fishRate(f3,1.2);f3.setAttribute("transform","translate(300,270)");
+ pels.setAttribute("display","none");$("rips").setAttribute("display","none");
+ refresh();setMsg("Choose the nitrite level in the tank water, then click a stage (or the Start button) to run it. Each stage takes 5 seconds.");
+ if(focusIt)act.focus()}
+act.onclick=function(){if(running||act.getAttribute("aria-disabled")==="true")return;var nx=doneF.indexOf(false);if(nx<0)reset(true);else startStage(nx+1)};
+Array.prototype.forEach.call(document.querySelectorAll(".stp"),function(b){b.onclick=function(){if(running||b.getAttribute("aria-disabled")==="true")return;startStage(+b.getAttribute("data-n"))}});
+$("ppm").oninput=function(){ppm=parseFloat(this.value);$("pv").textContent=ppm.toFixed(1)+" ppm"};
+$("pause").onclick=function(){paused=!paused;document.body.classList.toggle("paused",paused);this.setAttribute("aria-pressed",paused);this.textContent=paused?"Resume animation":"Pause animation"};
+gillCol(f1,0);reset(false);raf=requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
